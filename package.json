@@ -1,0 +1,63 @@
+{
+  "name": "@fi-unam/ui",
+  "version": "0.1.1",
+  "description": "Identidad visual de la Facultad de Ingeniería, UNAM, sobre Nuxt UI v4: tokens de color con temas especiales, encabezado, pie y logotipos.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "private": true,
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "style": "./src/css/index.css",
+      "import": "./src/index.ts"
+    },
+    "./css": "./src/css/index.css",
+    "./nuxt": "./src/nuxt/module.ts",
+    "./vue": "./src/vue/plugin.ts",
+    "./components/*": "./src/components/*",
+    "./assets/*": "./src/assets/*",
+    "./data": "./src/fi-data.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "defu": "^6.1.4"
+  },
+  "peerDependencies": {
+    "@iconify-json/bi": "^1.2.0",
+    "@iconify-json/fa6-brands": "^1.2.0",
+    "@iconify-json/fa6-solid": "^1.2.0",
+    "@nuxt/kit": "^4.0.0",
+    "@nuxt/ui": "^4.9.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@iconify-json/bi": {
+      "optional": true
+    },
+    "@iconify-json/fa6-brands": {
+      "optional": true
+    },
+    "@iconify-json/fa6-solid": {
+      "optional": true
+    },
+    "@nuxt/kit": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10",
+    "vue": "^3.5.39"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

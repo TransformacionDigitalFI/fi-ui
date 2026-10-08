@@ -1,0 +1,65 @@
+/* =========================================================================
+   @fi-unam/ui — temas especiales
+   =========================================================================
+
+   Un tema = un bloque `[data-fi-theme="<id>"]` que cambia semillas. Lo que no
+   declara lo hereda del tema FI (tokens.css), así que un tema de un solo color
+   es una sola línea.
+
+   Para añadir uno:
+     1. Bloque aquí con sus semillas (y su listón si conmemora algo).
+     2. Entrada en src/themes/registry.ts con nombre, descripción y fechas.
+     3. `npm test` — verifica contraste AA de cada semilla y que CSS y
+        registro digan los mismos temas.
+
+   Se activan con `data-fi-theme="<id>"` en <html> (todo el sitio) o en
+   cualquier contenedor (solo ese bloque).
+
+   Los colores son una propuesta razonada, no una norma institucional: si
+   Comunicación de la FI define otros, se cambian aquí y las pruebas dicen si
+   todavía son legibles.
+   ========================================================================= */
+
+@layer theme {
+  /* Luto institucional — grafito; listón negro. Solo manual. */
+  [data-fi-theme="luto"] {
+    --fi-seed-primary: #5B636B;
+    --fi-seed-secondary: #60676F;
+    --fi-seed-tertiary: #60676F;
+    --fi-ribbon: #111111;
+  }
+
+  /* 8M · Día Internacional de la Mujer — morado. */
+  [data-fi-theme="8m"] {
+    --fi-seed-primary: #8B4AB8;
+    --fi-ribbon: #8B4AB8;
+  }
+
+  /* 10 sep · Día Mundial para la Prevención del Suicidio — listón turquesa
+     y morado. */
+  [data-fi-theme="prevencion-suicidio"] {
+    --fi-seed-primary: #0B7A82;
+    --fi-seed-secondary: #8B4AB8;
+    --fi-ribbon: #0B7A82;
+    --fi-ribbon-accent: #8B4AB8;
+  }
+
+  /* 10 oct · Día Mundial de la Salud Mental — listón verde. */
+  [data-fi-theme="salud-mental"] {
+    --fi-seed-primary: #2E7D32;
+    --fi-ribbon: #2E7D32;
+  }
+
+  /* 19 oct · Día Internacional de la Lucha contra el Cáncer de Mama — rosa. */
+  [data-fi-theme="cancer-mama"] {
+    --fi-seed-primary: #BE185D;
+    --fi-ribbon: #DB2777;
+  }
+
+  /* 25N · Día Internacional de la Eliminación de la Violencia contra las
+     Mujeres — naranja (campaña ÚNETE de ONU Mujeres). */
+  [data-fi-theme="25n"] {
+    --fi-seed-primary: #C2410C;
+    --fi-ribbon: #EA580C;
+  }
+}

@@ -1,0 +1,225 @@
+/* =========================================================================
+   @fi-unam/ui — tokens de color
+   =========================================================================
+
+   Tres capas, y un tema solo toca la primera:
+
+     1. Semillas   --fi-seed-{primary,secondary,tertiary}
+                   Un color por rol. ES LO ÚNICO que un tema especial cambia.
+
+     2. Escalas    --color-fi-{rol}-{50…950}
+                   Derivadas de la semilla con color-mix() en OKLCH. La semilla
+                   ES el paso 500; los claros se mezclan con blanco y los
+                   oscuros con negro. OKLCH conserva el matiz de la semilla
+                   (blanco y negro no tienen matiz propio), así que la escala
+                   no se agrisa ni vira de tono.
+
+     3. Nuxt UI    --ui-color-{rol}-{50…950}, --ui-primary, --ui-bg, …
+                   Los genera Nuxt UI a partir de app.config:
+                   `ui.colors.primary = 'fi-primary'` produce
+                   `--ui-color-primary-500: var(--color-fi-primary-500)`.
+                   Aquí solo se tocan las superficies de modo claro (fondo
+                   pizarra, tarjetas blancas) y el reenlace de los temas con
+                   alcance local.
+
+   Requisito de una semilla: contraste AA (≥ 4.5:1) contra blanco en el paso
+   500 y contra neutral-900 en el paso 400 — son los pares texto/fondo de un
+   UButton sólido en modo claro y oscuro. Las pruebas del paquete lo verifican
+   para cada tema; una semilla que no pasa se rechaza ahí, no en producción.
+
+   Las mezclas viven en `:root, [data-fi-theme]` y no solo en `:root`: una
+   variable con var() se resuelve en el elemento donde se declara, así que un
+   tema aplicado a un contenedor (no al <html>) necesita recalcular su escala
+   en ese mismo contenedor.
+   ========================================================================= */
+
+@layer theme {
+  :root,
+  [data-fi-theme] {
+    /* ── 1. Semillas — identidad FI ─────────────────────────────────────── */
+    --fi-seed-primary: #CD171E;   /* rojo FI — exacto del portal ingenieria.unam.mx */
+    --fi-seed-secondary: #8A6A00; /* oro UNAM, oscurecido lo justo para AA en claro */
+    --fi-seed-tertiary: #3A72A8;  /* azul pizarra — el de los micrositios FI (pizarra-500) */
+
+    /* Listón de conmemoración. `transparent` = sin listón (tema base). */
+    --fi-ribbon: transparent;
+    --fi-ribbon-accent: var(--fi-ribbon);
+
+    /* Acentos editoriales de las infografías de la Facultad (gaceta,
+       micrositios): azul marino para títulos y etiquetas, oro para filetes y
+       viñetas. Salen de las escalas, así que un tema especial los arrastra. El
+       oro es decorativo: con texto blanco encima no llega a AA — para números
+       o etiquetas sobre oro usa secondary-500. */
+    --fi-navy: var(--color-fi-tertiary-800);
+    --fi-gold: var(--color-fi-secondary-400);
+
+    /* Encabezado oscuro de los sitios FI (el del portal sobre su portada). */
+    --fi-header-bg: #1E2125;
+
+    /* ── 2. Escalas derivadas ───────────────────────────────────────────── */
+    --color-fi-primary-50:  color-mix(in oklch, var(--fi-seed-primary) 7%, white);
+    --color-fi-primary-100: color-mix(in oklch, var(--fi-seed-primary) 14%, white);
+    --color-fi-primary-200: color-mix(in oklch, var(--fi-seed-primary) 28%, white);
+    --color-fi-primary-300: color-mix(in oklch, var(--fi-seed-primary) 48%, white);
+    --color-fi-primary-400: color-mix(in oklch, var(--fi-seed-primary) 72%, white);
+    --color-fi-primary-500: var(--fi-seed-primary);
+    --color-fi-primary-600: color-mix(in oklch, var(--fi-seed-primary) 86%, black);
+    --color-fi-primary-700: color-mix(in oklch, var(--fi-seed-primary) 74%, black);
+    --color-fi-primary-800: color-mix(in oklch, var(--fi-seed-primary) 62%, black);
+    --color-fi-primary-900: color-mix(in oklch, var(--fi-seed-primary) 52%, black);
+    --color-fi-primary-950: color-mix(in oklch, var(--fi-seed-primary) 38%, black);
+
+    --color-fi-secondary-50:  color-mix(in oklch, var(--fi-seed-secondary) 7%, white);
+    --color-fi-secondary-100: color-mix(in oklch, var(--fi-seed-secondary) 14%, white);
+    --color-fi-secondary-200: color-mix(in oklch, var(--fi-seed-secondary) 28%, white);
+    --color-fi-secondary-300: color-mix(in oklch, var(--fi-seed-secondary) 48%, white);
+    --color-fi-secondary-400: color-mix(in oklch, var(--fi-seed-secondary) 72%, white);
+    --color-fi-secondary-500: var(--fi-seed-secondary);
+    --color-fi-secondary-600: color-mix(in oklch, var(--fi-seed-secondary) 86%, black);
+    --color-fi-secondary-700: color-mix(in oklch, var(--fi-seed-secondary) 74%, black);
+    --color-fi-secondary-800: color-mix(in oklch, var(--fi-seed-secondary) 62%, black);
+    --color-fi-secondary-900: color-mix(in oklch, var(--fi-seed-secondary) 52%, black);
+    --color-fi-secondary-950: color-mix(in oklch, var(--fi-seed-secondary) 38%, black);
+
+    --color-fi-tertiary-50:  color-mix(in oklch, var(--fi-seed-tertiary) 7%, white);
+    --color-fi-tertiary-100: color-mix(in oklch, var(--fi-seed-tertiary) 14%, white);
+    --color-fi-tertiary-200: color-mix(in oklch, var(--fi-seed-tertiary) 28%, white);
+    --color-fi-tertiary-300: color-mix(in oklch, var(--fi-seed-tertiary) 48%, white);
+    --color-fi-tertiary-400: color-mix(in oklch, var(--fi-seed-tertiary) 72%, white);
+    --color-fi-tertiary-500: var(--fi-seed-tertiary);
+    --color-fi-tertiary-600: color-mix(in oklch, var(--fi-seed-tertiary) 86%, black);
+    --color-fi-tertiary-700: color-mix(in oklch, var(--fi-seed-tertiary) 74%, black);
+    --color-fi-tertiary-800: color-mix(in oklch, var(--fi-seed-tertiary) 62%, black);
+    --color-fi-tertiary-900: color-mix(in oklch, var(--fi-seed-tertiary) 52%, black);
+    --color-fi-tertiary-950: color-mix(in oklch, var(--fi-seed-tertiary) 38%, black);
+
+    /* ── Neutro — grafito del portal FI ─────────────────────────────────────
+       Escala de grises del portal (la de Bootstrap) acomodada a 50…950. En
+       claro las superficies son pizarra (abajo); el neutro queda para los
+       componentes `color="neutral"`, los títulos (--ui-text-highlighted =
+       900, #212529), el pie (700, #343A40) y todo el modo oscuro.
+       Es fija: un tema puede sobrescribirla, pero ninguno lo necesita. */
+    --color-fi-neutral-50:  #F8F9FA;
+    --color-fi-neutral-100: #E9ECEF;
+    --color-fi-neutral-200: #DEE2E6;
+    --color-fi-neutral-300: #CED4DA;
+    --color-fi-neutral-400: #ADB5BD;
+    --color-fi-neutral-500: #6A737B; /* portal: #6C757D, 4.45:1 sobre 50 — oscurecido a AA */
+    --color-fi-neutral-600: #495057;
+    --color-fi-neutral-700: #343A40;
+    --color-fi-neutral-800: #2B3035;
+    --color-fi-neutral-900: #212529;
+    --color-fi-neutral-950: #121416;
+
+    /* ── Pizarra — superficies claras de los sitios FI ──────────────────────
+       Fija, como el neutro: es el plano sobre el que se lee todo, no un color
+       de marca, y un tema especial no la cambia. */
+    --color-fi-pizarra-50:  #EDF2F7;
+    --color-fi-pizarra-100: #D6E4F5;
+    --color-fi-pizarra-200: #B0C9E6;
+    --color-fi-pizarra-300: #84AACF;
+    --color-fi-pizarra-400: #6A96C0;
+    --color-fi-pizarra-500: #3A72A8;
+    --color-fi-pizarra-600: #2E5A87;
+    --color-fi-pizarra-700: #1E3D5A;
+    --color-fi-pizarra-800: #172D49;
+    --color-fi-pizarra-900: #0A1620;
+    --color-fi-pizarra-950: #070E18;
+  }
+
+  /* ── Superficies — modo claro ───────────────────────────────────────────
+     Fondo azul pizarra muy claro con tarjetas blancas encima, como los
+     micrositios FI (p. ej. la sección "Cambios sustanciales" de Planes de
+     estudio 2026). Nuxt UI pone por defecto página blanca y tarjetas grises;
+     aquí se invierte para que el contenido se lea como tarjetas sobre un
+     plano. Solo en claro: `.dark` conserva los valores de Nuxt UI sobre el
+     neutro grafito. `.light` cubre contenedores forzados a claro (UApp). */
+  :root:not(.dark),
+  .light {
+    --ui-bg: var(--color-fi-pizarra-50);
+    --ui-bg-muted: var(--color-fi-pizarra-100);
+    --ui-bg-elevated: #FFFFFF;
+    --ui-bg-accented: var(--color-fi-pizarra-100);
+
+    --ui-border: var(--color-fi-pizarra-400);
+    --ui-border-muted: var(--color-fi-pizarra-200);
+    --ui-border-accented: var(--color-fi-pizarra-300);
+
+    --ui-text: #1A1C1E;
+    --ui-text-toned: var(--color-fi-pizarra-800);
+    --ui-text-muted: var(--color-fi-pizarra-700);
+    /* pizarra-600 y no 400 (el del micrositio): 400 da 3:1 sobre blanco y
+       2.4:1 sobre pizarra-100, y este token lleva texto, no solo placeholders. */
+    --ui-text-dimmed: var(--color-fi-pizarra-600);
+  }
+
+  :root {
+    /* Un punto más recto que el default de Nuxt UI, como los botones del portal. */
+    --ui-radius: 0.375rem;
+
+    /* Alto del encabezado completo (cinta + barra) sin contraer. FiTopBar
+       publica su alto real en --fi-topbar-offset (en móvil sus enlaces ocupan
+       varios renglones); la barra mide 5rem, 6rem desde lg, más su filete.
+       Sirve para portadas que llenan la primera pantalla. */
+    --fi-header-offset: calc(var(--fi-topbar-offset, 46px) + 5rem + 1px);
+  }
+
+  @media (min-width: 64rem) {
+    :root {
+      --fi-header-offset: calc(var(--fi-topbar-offset, 46px) + 6rem + 1px);
+    }
+  }
+
+  /* ── 3. Temas con alcance local ─────────────────────────────────────────
+     Nuxt UI declara --ui-color-* y --ui-{rol} solo en :root. Un contenedor
+     con su propio data-fi-theme hereda esos valores ya resueltos, así que se
+     reenlazan aquí para que tomen la escala recalculada del contenedor. */
+  [data-fi-theme]:not(:root) {
+    --ui-color-primary-50: var(--color-fi-primary-50);
+    --ui-color-primary-100: var(--color-fi-primary-100);
+    --ui-color-primary-200: var(--color-fi-primary-200);
+    --ui-color-primary-300: var(--color-fi-primary-300);
+    --ui-color-primary-400: var(--color-fi-primary-400);
+    --ui-color-primary-500: var(--color-fi-primary-500);
+    --ui-color-primary-600: var(--color-fi-primary-600);
+    --ui-color-primary-700: var(--color-fi-primary-700);
+    --ui-color-primary-800: var(--color-fi-primary-800);
+    --ui-color-primary-900: var(--color-fi-primary-900);
+    --ui-color-primary-950: var(--color-fi-primary-950);
+
+    --ui-color-secondary-50: var(--color-fi-secondary-50);
+    --ui-color-secondary-100: var(--color-fi-secondary-100);
+    --ui-color-secondary-200: var(--color-fi-secondary-200);
+    --ui-color-secondary-300: var(--color-fi-secondary-300);
+    --ui-color-secondary-400: var(--color-fi-secondary-400);
+    --ui-color-secondary-500: var(--color-fi-secondary-500);
+    --ui-color-secondary-600: var(--color-fi-secondary-600);
+    --ui-color-secondary-700: var(--color-fi-secondary-700);
+    --ui-color-secondary-800: var(--color-fi-secondary-800);
+    --ui-color-secondary-900: var(--color-fi-secondary-900);
+    --ui-color-secondary-950: var(--color-fi-secondary-950);
+
+    --ui-color-tertiary-50: var(--color-fi-tertiary-50);
+    --ui-color-tertiary-100: var(--color-fi-tertiary-100);
+    --ui-color-tertiary-200: var(--color-fi-tertiary-200);
+    --ui-color-tertiary-300: var(--color-fi-tertiary-300);
+    --ui-color-tertiary-400: var(--color-fi-tertiary-400);
+    --ui-color-tertiary-500: var(--color-fi-tertiary-500);
+    --ui-color-tertiary-600: var(--color-fi-tertiary-600);
+    --ui-color-tertiary-700: var(--color-fi-tertiary-700);
+    --ui-color-tertiary-800: var(--color-fi-tertiary-800);
+    --ui-color-tertiary-900: var(--color-fi-tertiary-900);
+    --ui-color-tertiary-950: var(--color-fi-tertiary-950);
+
+    --ui-primary: var(--ui-color-primary-500);
+    --ui-secondary: var(--ui-color-secondary-500);
+    --ui-tertiary: var(--ui-color-tertiary-500);
+  }
+
+  .dark [data-fi-theme]:not(:root),
+  [data-fi-theme].dark:not(:root) {
+    --ui-primary: var(--ui-color-primary-400);
+    --ui-secondary: var(--ui-color-secondary-400);
+    --ui-tertiary: var(--ui-color-tertiary-400);
+  }
+}
