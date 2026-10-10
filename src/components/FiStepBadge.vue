@@ -22,7 +22,7 @@ function resolvedTone(): 'navy' | 'gold' {
 <template>
   <span
     class="grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold tabular-nums text-white"
-    :class="resolvedTone() === 'gold' ? 'bg-secondary-500' : 'bg-(--fi-navy)'"
+    :class="resolvedTone() === 'gold' ? 'bg-secondary-500' : 'bg-fi-navy'"
   >
     {{ props.value }}
   </span>

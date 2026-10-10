@@ -24,9 +24,18 @@ export function useFiLocale(): Readonly<Ref<string>> {
   return inject(fiLocaleKey, () => ref('es'), true)
 }
 
+/**
+ * Reduce el código que pase el proyecto a uno de los dos idiomas del paquete.
+ * @nuxtjs/i18n y vue-i18n aceptan códigos con región ('en-US', 'en_GB'); una
+ * comparación exacta con 'en' los mandaba en silencio al español.
+ */
+export function normalizeFiLocale(locale: string | null | undefined): FiLocale {
+  return typeof locale === 'string' && /^en(?:[-_]|$)/i.test(locale.trim()) ? 'en' : 'es'
+}
+
 export function resolveText(text: LocalizedText, locale: string): string {
   if (typeof text === 'string') return text
-  return (locale === 'en' ? text.en : undefined) ?? text.es
+  return (normalizeFiLocale(locale) === 'en' ? text.en : undefined) ?? text.es
 }
 
 const MESSAGES = {
@@ -40,6 +49,8 @@ const MESSAGES = {
     rights: 'Facultad de Ingeniería — UNAM © {year} Derechos reservados',
     goBack: 'Regresar',
     faculty: 'Facultad de Ingeniería',
+    skipToContent: 'Saltar al contenido',
+    loading: 'Cargando…',
   },
   en: {
     facultyLinks: 'Faculty links',
@@ -51,6 +62,8 @@ const MESSAGES = {
     rights: 'Faculty of Engineering — UNAM © {year} All rights reserved',
     goBack: 'Go back',
     faculty: 'Faculty of Engineering',
+    skipToContent: 'Skip to main content',
+    loading: 'Loading…',
   },
 } satisfies Record<FiLocale, Record<string, string>>
 
@@ -60,7 +73,7 @@ export type FiMessageKey = keyof typeof MESSAGES.es
 export function useFiT(): ComputedRef<(key: FiMessageKey, params?: Record<string, string | number>) => string> {
   const locale = useFiLocale()
   return computed(() => {
-    const dict = locale.value === 'en' ? MESSAGES.en : MESSAGES.es
+    const dict = normalizeFiLocale(locale.value) === 'en' ? MESSAGES.en : MESSAGES.es
     return (key, params) => {
       const text: string = dict[key] ?? MESSAGES.es[key]
       return params ? text.replace(/\{(\w+)\}/g, (m, name: string) => (name in params ? String(params[name]) : m)) : text

@@ -9,97 +9,10 @@
      @import "@nuxt/ui";
      @import "@fi-unam/ui";
 
-   No trae fuentes: declara Inter y Playfair Display (las del portal FI) y
-   cada proyecto decide cómo cargarlas — @nuxt/fonts lo hace solo si está
-   activo; si no, un @font-face local.
+   Trae las fuentes (fonts.css) y el resto del lenguaje visual
+   (no-fonts.css). Un proyecto que sirve sus propias fuentes importa
+   "@fi-unam/ui/css/no-fonts" en lugar de este archivo.
    ========================================================================= */
 
-@import "./tokens.css";
-@import "./themes.css";
-
-/* Las clases de los componentes del paquete viven fuera del proyecto y
-   Tailwind no las ve si no se le dice dónde buscar. */
-@source "../components";
-
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Antetítulos y acentos editoriales del portal. Georgia si no se carga. */
-  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
-}
-
-@layer base {
-  /* Safari 26 ya no lee <meta name="theme-color"> y tiñe su barra con el
-     fondo de la página: el rojo de la cinta, que es lo que hay arriba. El
-     <body> conserva su fondo (Nuxt UI lo pinta con --ui-bg), así que esto
-     solo se ve en el rebote del scroll y en la barra del navegador. */
-  html {
-    background-color: var(--ui-color-primary-500);
-  }
-
-  /* El body cubre siempre la ventana: el rojo de <html> solo debe asomar en
-     el rebote del scroll, nunca como fondo de una página vacía (una vista que
-     falla al cargar se veía como una pantalla roja). */
-  body {
-    min-height: 100dvh;
-  }
-
-  ::selection {
-    background-color: var(--ui-color-primary-100);
-    color: var(--ui-text-highlighted);
-  }
-}
-
-/* =========================================================================
-   Piezas editoriales de los sitios FI (gaceta, micrositios). Clases planas y
-   no componentes porque se aplican a cualquier elemento: un <span>, un <h3>,
-   un enlace. Toman --fi-navy / --fi-gold, así que siguen al tema activo.
-   ========================================================================= */
-@layer components {
-  /* Etiqueta-flecha: antetítulo de sección ("¿Cuáles son los cambios?"). */
-  .fi-tag {
-    display: inline-block;
-    background-color: var(--fi-navy);
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.6875rem;
-    line-height: 1.4;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    padding: 0.35rem 1.15rem 0.35rem 0.85rem;
-    clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
-  }
-
-  /* Banda-píldora para títulos de bloque dentro de una sección. */
-  .fi-band {
-    display: inline-block;
-    background-color: var(--fi-navy);
-    color: #fff;
-    border-radius: 9999px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 0.55rem 1.6rem;
-  }
-
-  /* Antetítulo editorial del portal: serif, caja de oración. */
-  .fi-eyebrow {
-    font-family: var(--font-serif);
-    font-weight: 400;
-    color: var(--ui-text-muted);
-  }
-
-  /* Acento serif en itálica dentro de un titular ("con ocho planes"). */
-  .fi-serif-accent {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-weight: 500;
-  }
-
-  /* Enlace de menú del portal: versalitas espaciadas. */
-  .fi-navlink {
-    text-transform: uppercase;
-    letter-spacing: 0.0625rem;
-    font-weight: 700;
-    font-size: 0.8125rem;
-  }
-}
+@import "./fonts.css";
+@import "./no-fonts.css";

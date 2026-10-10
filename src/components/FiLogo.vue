@@ -4,6 +4,8 @@ import wordmark from '../assets/fi-wordmark.png'
 import wordmarkInverse from '../assets/fi-wordmark-inverse.png'
 import wordmarkFooter from '../assets/fi-wordmark-footer.png'
 import escudo from '../assets/fi-escudo.png'
+import { useFiT, useFiText } from '../i18n'
+import type { LocalizedText } from '../i18n'
 
 /**
  * Logotipo de la Facultad tal como lo usa el portal.
@@ -15,17 +17,24 @@ import escudo from '../assets/fi-escudo.png'
  * - `escudo`: el escudo a color.
  * La altura va por prop y no por clase: una `h-*` del consumidor competiría
  * con la del componente y ganaría la que Tailwind emita después.
+ *
+ * El texto alternativo sale del diccionario del paquete en el idioma activo.
+ * `alt=""` lo vuelve decorativo, para cuando el nombre de la Facultad ya está
+ * escrito junto al logotipo.
  */
 const props = withDefaults(defineProps<{
   variant?: 'wordmark' | 'inverse' | 'footer' | 'escudo'
-  alt?: string
+  alt?: LocalizedText
   /** Cualquier longitud CSS; el ancho sigue la proporción. */
   height?: string
 }>(), {
   variant: 'wordmark',
-  alt: 'Facultad de Ingeniería',
+  alt: undefined,
   height: '3rem',
 })
+
+const t = useFiT()
+const text = useFiText()
 
 const src = computed(() => ({
   wordmark,
@@ -33,12 +42,16 @@ const src = computed(() => ({
   footer: wordmarkFooter,
   escudo,
 })[props.variant])
+
+// Solo la ausencia toma el del diccionario: la cadena vacía es una decisión
+// (logotipo decorativo), no un hueco.
+const alt = computed(() => (props.alt === undefined ? t.value('faculty') : text.value(props.alt)))
 </script>
 
 <template>
   <img
     :src="src"
-    :alt="props.alt"
+    :alt="alt"
     class="w-auto max-w-none select-none"
     :style="{ height: props.height }"
     draggable="false"

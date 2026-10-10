@@ -1,0 +1,28 @@
+/* =========================================================================
+   @fi-unam/ui — fuentes
+   =========================================================================
+
+   Inter (texto) y Playfair Display (antetítulos y acentos editoriales), las
+   del portal FI, desde Fontsource (licencia OFL). Los archivos viajan con el
+   paquete y los sirve el propio sitio: sin Google Fonts ni ninguna otra red
+   externa en tiempo de ejecución, igual en Nuxt que en Vue + Vite.
+
+   Fontsource no publica una hoja por subconjunto para las fuentes variables:
+   cada hoja declara todos (latin, latin-ext, cirílico, griego, vietnamita)
+   con `unicode-range`, y el navegador solo descarga los que la página usa —
+   para texto en español, latin y latin-ext. El resto solo ocupa disco en el
+   build.
+
+   Playfair trae su itálica: es la de .fi-serif-accent. Inter trae la suya
+   para <em> e <i>; sin ella el navegador inclina la redonda.
+
+   Lo importa @fi-unam/ui (index.css). Si el proyecto ya sirve sus fuentes,
+   importa @fi-unam/ui/css/no-fonts en su lugar; las familias se llaman
+   "Inter Variable" y "Playfair Display Variable", y la pila de no-fonts.css
+   cae a "Inter" / "Playfair Display" si las declara el proyecto.
+   ========================================================================= */
+
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/inter/wght-italic.css";
+@import "@fontsource-variable/playfair-display/wght.css";
+@import "@fontsource-variable/playfair-display/wght-italic.css";

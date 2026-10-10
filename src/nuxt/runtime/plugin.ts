@@ -1,6 +1,6 @@
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { defineNuxtPlugin, useAppConfig, useHead, useRoute, useRuntimeConfig, useState } from '#imports'
-import { FI_CHROME_COLOR } from '../../chrome'
+import { fiChromeColor } from '../../chrome'
 import { fiConfigKey } from '../../composables/useFiConfig'
 import { fiLocaleKey } from '../../i18n'
 import type { FiUiConfig } from '../../composables/useFiConfig'
@@ -28,11 +28,25 @@ export default defineNuxtPlugin({
       return resolveFiTheme({ setting: config.theme, calendar: config.calendar ?? undefined })
     })
 
-    const chromeColor = useState<string>('fi-ui:chrome-color', () => FI_CHROME_COLOR)
+    // Color de la barra del navegador. Arranca con el primario del tema y lo
+    // sigue al cambiar de tema, también en páginas sin FiHeader (un
+    // dashboard): antes se quedaba en el rojo FI aunque la página fuera
+    // verde. FiHeader lo ajusta después según lo que esté arriba; su watch
+    // corre después de este y gana.
+    const chromeColor = useState<string>('fi-ui:chrome-color', () => fiChromeColor(theme.value))
+    watch(theme, (id) => {
+      chromeColor.value = fiChromeColor(id)
+    })
 
+    // `chrome: false` apaga el fondo rojo de <html> (no-fonts.css) y no emite
+    // theme-color: el navegador usa el suyo.
+    const chrome = config.chrome !== false
     useHead({
-      htmlAttrs: { 'data-fi-theme': computed(() => theme.value) },
-      meta: [{ name: 'theme-color', content: chromeColor }],
+      htmlAttrs: {
+        'data-fi-theme': computed(() => theme.value),
+        ...(chrome ? {} : { 'data-fi-chrome': 'off' }),
+      },
+      meta: chrome ? [{ name: 'theme-color', content: chromeColor }] : [],
     })
 
     nuxtApp.vueApp.provide(fiThemeKey, createFiThemeState(theme, chromeColor))

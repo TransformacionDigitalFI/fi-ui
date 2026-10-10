@@ -18,14 +18,25 @@
                    Los genera Nuxt UI a partir de app.config:
                    `ui.colors.primary = 'fi-primary'` produce
                    `--ui-color-primary-500: var(--color-fi-primary-500)`.
-                   Aquí solo se tocan las superficies de modo claro (fondo
-                   pizarra, tarjetas blancas) y el reenlace de los temas con
-                   alcance local.
+                   Aquí se tocan solo en modo claro: las superficies (fondo
+                   pizarra, tarjetas blancas), el paso de los roles y los
+                   estados (legibles sobre esas superficies), y el reenlace
+                   de los temas con alcance local.
 
    Requisito de una semilla: contraste AA (≥ 4.5:1) contra blanco en el paso
-   500 y contra neutral-900 en el paso 400 — son los pares texto/fondo de un
-   UButton sólido en modo claro y oscuro. Las pruebas del paquete lo verifican
-   para cada tema; una semilla que no pasa se rechaza ahí, no en producción.
+   500 (botón sólido) y contra --fi-header-bg en el 400 (islas oscuras), y su
+   paso 600 legible como texto sobre las tres superficies claras y sobre su
+   propio tinte. tests/contrast.test.ts lo verifica para cada tema; una
+   semilla que no pasa se rechaza ahí, no en producción.
+
+   Solo modo claro. Lo oscuro existe como ISLA: un contenedor con la clase
+   `dark` (FiHeader, FiFooter, la barra lateral del dashboard, bandas azul
+   marino). Dentro de la isla Nuxt UI aplica sus tokens `.dark` (los declara
+   su CSS bajo el selector `.dark`, con o sin color mode) y la variante
+   `dark:` de Tailwind se activa por clase; fuera, nunca. Por eso el módulo
+   de Nuxt apaga el color mode (src/nuxt/module.ts): si <html> recibiera
+   `.dark`, toda la página sería isla y --fi-navy (sin valor oscuro: es tinta
+   sobre claro o relleno dentro de una isla) quedaría ilegible.
 
    Las mezclas viven en `:root, [data-fi-theme]` y no solo en `:root`: una
    variable con var() se resuelve en el elemento donde se declara, así que un
@@ -47,13 +58,17 @@
 
     /* Acentos editoriales de las infografías de la Facultad (gaceta,
        micrositios): azul marino para títulos y etiquetas, oro para filetes y
-       viñetas. Salen de las escalas, así que un tema especial los arrastra. El
-       oro es decorativo: con texto blanco encima no llega a AA — para números
-       o etiquetas sobre oro usa secondary-500. */
+       viñetas. Son ROLES, no matices: salen de las escalas terciaria y
+       secundaria, así que un tema especial los arrastra (en luto el "azul
+       marino" es grafito). Sin valor oscuro: navy es tinta sobre superficies
+       claras o relleno dentro de una isla. El oro es decorativo: con texto
+       blanco encima no llega a AA — para números o etiquetas sobre oro usa
+       secondary-500. Utilidades: text-fi-navy, bg-fi-gold/60… (no-fonts.css). */
     --fi-navy: var(--color-fi-tertiary-800);
     --fi-gold: var(--color-fi-secondary-400);
 
-    /* Encabezado oscuro de los sitios FI (el del portal sobre su portada). */
+    /* Encabezado oscuro de los sitios FI (el del portal sobre su portada).
+       Utilidad: bg-fi-header. */
     --fi-header-bg: #1E2125;
 
     /* ── 2. Escalas derivadas ───────────────────────────────────────────── */
@@ -132,20 +147,40 @@
      micrositios FI (p. ej. la sección "Cambios sustanciales" de Planes de
      estudio 2026). Nuxt UI pone por defecto página blanca y tarjetas grises;
      aquí se invierte para que el contenido se lea como tarjetas sobre un
-     plano. Solo en claro: `.dark` conserva los valores de Nuxt UI sobre el
-     neutro grafito. `.light` cubre contenedores forzados a claro (UApp). */
+     plano:
+       página        bg-default   pizarra-50
+       tarjeta       bg-elevated  blanco (+ border-default + rounded-2xl)
+       banda tenue   bg-muted     pizarra-100
+       tinte fuerte  bg-accented  entre pizarra-100 y 200
+     muted y accented son tintes distintos a propósito: el hover de algo que
+     ya está en bg-muted (botón soft, banda) necesita un paso más. Los
+     componentes de Nuxt UI que asumían lo contrario se corrigen en
+     src/app-config.js.
+     Solo en claro: `.dark` (las islas) conserva los valores de Nuxt UI sobre
+     el neutro grafito. `.light` cubre un contenedor claro dentro de una isla;
+     `:not(.dark)` sube la especificidad para ganarle al `.light` de Nuxt UI
+     sin depender del orden de las hojas. */
   :root:not(.dark),
-  .light {
+  .light:not(.dark) {
     --ui-bg: var(--color-fi-pizarra-50);
     --ui-bg-muted: var(--color-fi-pizarra-100);
     --ui-bg-elevated: #FFFFFF;
-    --ui-bg-accented: var(--color-fi-pizarra-100);
+    --ui-bg-accented: color-mix(in oklch, var(--color-fi-pizarra-100) 50%, var(--color-fi-pizarra-200));
 
     --ui-border: var(--color-fi-pizarra-400);
     --ui-border-muted: var(--color-fi-pizarra-200);
-    --ui-border-accented: var(--color-fi-pizarra-300);
+    /* Borde de los controles (input, select, textarea, checkbox, radio,
+       botón outline neutro: todos usan ring-accented). WCAG 1.4.11 pide 3:1
+       contra lo que lo rodea: el relleno blanco del campo, la página pizarra
+       y una banda bg-muted. pizarra-300 daba 2.4:1 sobre blanco; la mitad
+       entre 400 y 500 pasa en las tres (tests/surfaces.test.ts). */
+    --ui-border-accented: color-mix(in oklch, var(--color-fi-pizarra-400) 50%, var(--color-fi-pizarra-500));
 
-    --ui-text: #1A1C1E;
+    /* Texto de la escala grafito: highlighted (títulos, menús) más oscuro que
+       el cuerpo, como en Nuxt UI. Antes el cuerpo era un #1A1C1E suelto,
+       más oscuro que los títulos. */
+    --ui-text: var(--color-fi-neutral-900);
+    --ui-text-highlighted: var(--color-fi-neutral-950);
     --ui-text-toned: var(--color-fi-pizarra-800);
     --ui-text-muted: var(--color-fi-pizarra-700);
     /* pizarra-600 y no 400 (el del micrositio): 400 da 3:1 sobre blanco y
@@ -153,8 +188,44 @@
     --ui-text-dimmed: var(--color-fi-pizarra-600);
   }
 
+  /* ── Roles y estados — modo claro ───────────────────────────────────────
+     Nuxt UI pinta cada color en su paso 500 (`--ui-success: green-500`…), y
+     eso no es legible como texto en las superficies FI: green-500 da 2.0:1
+     sobre la página. Aquí se baja cada token al paso mínimo que pasa AA
+     (4.5:1) como texto, como insignia soft/subtle y como botón sólido con
+     texto blanco, sobre bg-default, bg-elevated y bg-muted. El paso lo
+     elige tests/contrast.test.ts (falla si uno más claro también pasara).
+     Los íconos y puntos de estado pueden usar 500/600 (3:1 basta); el texto
+     usa siempre el token.
+
+     --ui-primary se queda en 500: es el rojo exacto del portal (#CD171E) y
+     pasa sobre la página y las tarjetas en todos los temas; sobre bg-muted
+     no (4.35:1), así que text-primary sobre una banda bg-muted es una
+     combinación prohibida. El texto primario sobre su propio tinte baja a
+     600 desde src/app-config.js (fiPrimaryOnTint).
+
+     Las islas `.dark` toman el paso 400 de la hoja de colores de Nuxt UI. */
+  :root:not(.dark),
+  .light:not(.dark) {
+    --ui-secondary: var(--ui-color-secondary-600);
+    --ui-tertiary: var(--ui-color-tertiary-600);
+
+    --ui-success: var(--ui-color-success-800);
+    --ui-info: var(--ui-color-info-800);
+    --ui-warning: var(--ui-color-warning-800);
+    --ui-error: var(--ui-color-error-800);
+  }
+
   :root {
-    /* Un punto más recto que el default de Nuxt UI, como los botones del portal. */
+    /* Radio base de Nuxt UI: 0.375rem, MÁS redondo que su valor por defecto
+       (0.25rem). Tailwind deriva todos los radios de él:
+         rounded-md  = 1.5× = 9px   controles (botón, campo, menú: lo que
+                                     Nuxt UI ya pone; uno hecho a mano, igual)
+         rounded-lg  = 2×   = 12px  diálogos, toasts, píldoras de pestañas
+         rounded-xl  = 3×   = 18px  panel interno dentro de una tarjeta
+         rounded-2xl = 4×   = 24px  tarjeta (y la tabla, que es tarjeta)
+         rounded-3xl = 6×   = 36px  bandas y heroes, solo en sitio público
+       Cambiar este valor mueve toda la jerarquía a la vez. */
     --ui-radius: 0.375rem;
 
     /* Alto del encabezado completo (cinta + barra) sin contraer. FiTopBar
@@ -168,6 +239,44 @@
     :root {
       --fi-header-offset: calc(var(--fi-topbar-offset, 46px) + 6rem + 1px);
     }
+  }
+
+  /* ── Paleta de datos (gráficas) ─────────────────────────────────────────
+     Categórica, en orden fijo: la serie N usa --fi-chart-N y se asigna en
+     secuencia, nunca por ciclo (una novena serie se agrupa en "Otros").
+     Sin tonos de estado: nada de verde, ámbar ni rojo — en una gráfica esos
+     colores dicen "bien / cuidado / mal" aunque la serie no lo signifique
+     (ni el rojo FI, que junto al rojo de error no se distingue).
+
+     Sale de los roles FI (azul marino, azul pizarra, oro, grafito) y de
+     mezclas entre ellos, calculados con las semillas del tema FI y FIJOS:
+     un tema especial NO repinta las gráficas. Una serie conserva su color
+     de un día a otro (un tema dura un día), y derivadas del tema activo se
+     rompían: en luto todas salen grafito (ΔE 0 entre vecinas) y en
+     prevención del suicidio dos vecinas caen a ΔE×100 2.8 con daltonismo.
+     tests/charts.test.ts recalcula cada valor desde las semillas y mide:
+     ≥ 3:1 contra blanco y contra la página (marcas, WCAG 1.4.11), vecinas
+     distinguibles (ΔE OKLab×100 ≥ 15 con visión normal, ≥ 8 con
+     protanopia y deuteranopia) y distancia a los colores de estado.
+     En gráficas donde cualquier par se toca (dispersión, mapas) solo las
+     tres primeras son distinguibles entre todas; con más, facetas. */
+  :root {
+    --fi-chart-1: #1A3856;                       /* azul marino: tertiary-800 */
+    --fi-chart-2: var(--color-fi-pizarra-500);   /* azul pizarra: tertiary-500 (#3A72A8) */
+    --fi-chart-3: #8A6A00;                       /* oro: secondary-500 */
+    --fi-chart-4: #944BA8;                       /* púrpura: tertiary-500 ↔ primary-500, 50% */
+    --fi-chart-5: #5A4400;                       /* oro oscuro: secondary-700 */
+    --fi-chart-6: #007D8C;                       /* azul verdoso: tertiary-500 75% ↔ secondary-500 */
+    --fi-chart-7: #612F6F;                       /* ciruela: tertiary-700 ↔ primary-700, 50% */
+    --fi-chart-8: var(--color-fi-neutral-500);   /* grafito (también "Otros") */
+
+    /* Secuencial (magnitud, mapas de calor): un solo matiz, pizarra, de claro
+       a oscuro. Texto encima: --ui-text en 1–3, blanco en 4–5. */
+    --fi-chart-seq-1: var(--color-fi-pizarra-100);
+    --fi-chart-seq-2: var(--color-fi-pizarra-200);
+    --fi-chart-seq-3: var(--color-fi-pizarra-400);
+    --fi-chart-seq-4: var(--color-fi-pizarra-600);
+    --fi-chart-seq-5: var(--color-fi-pizarra-800);
   }
 
   /* ── 3. Temas con alcance local ─────────────────────────────────────────
@@ -211,9 +320,10 @@
     --ui-color-tertiary-900: var(--color-fi-tertiary-900);
     --ui-color-tertiary-950: var(--color-fi-tertiary-950);
 
+    /* Mismos pasos que el bloque de roles en claro. */
     --ui-primary: var(--ui-color-primary-500);
-    --ui-secondary: var(--ui-color-secondary-500);
-    --ui-tertiary: var(--ui-color-tertiary-500);
+    --ui-secondary: var(--ui-color-secondary-600);
+    --ui-tertiary: var(--ui-color-tertiary-600);
   }
 
   .dark [data-fi-theme]:not(:root),

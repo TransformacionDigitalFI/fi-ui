@@ -1,0 +1,181 @@
+/* =========================================================================
+   @fi-unam/ui — lenguaje visual sin fuentes
+   =========================================================================
+
+   Todo lo de @fi-unam/ui menos las @font-face: tokens de color, temas,
+   escala tipográfica, utilidades y piezas editoriales. Lo importa index.css
+   junto con fonts.css; un proyecto que ya sirve Inter y Playfair Display lo
+   importa solo:
+
+     @import "tailwindcss";
+     @import "@nuxt/ui";
+     @import "@fi-unam/ui/css/no-fonts";
+   ========================================================================= */
+
+@import "./tokens.css";
+@import "./themes.css";
+
+/* Las clases del paquete viven fuera del proyecto y Tailwind no las ve si no
+   se le dice dónde buscar: las de los componentes y las que src/app-config.js
+   inyecta en los de Nuxt UI (text-fi-navy, bg-accented…). */
+@source "../components";
+@source "../app-config.js";
+
+@theme {
+  /* Las variables de Fontsource primero (fonts.css); el nombre corto cubre a
+     un proyecto que declara su propio @font-face con no-fonts.css. */
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Antetítulos y acentos editoriales del portal. Georgia si no se carga. */
+  --font-serif: "Playfair Display Variable", "Playfair Display", Georgia, "Times New Roman", serif;
+}
+
+/* Escala tipográfica FI: un paso arriba de la de Tailwind en cada tamaño (el
+   portal se lee a 17px). Todo Nuxt UI la hereda: un `text-sm` de un botón
+   mide 15px. Nada de texto por debajo de 12px; text-xs ya es 13px.
+
+   Jerarquía de una vista:
+     h1 de vista       text-2xl sm:text-3xl font-bold tracking-tight text-fi-navy
+     h2 de sección     text-lg font-semibold text-fi-navy
+     h3 de tarjeta     text-base font-semibold text-highlighted
+     rótulo            .fi-label
+     cifras            tabular-nums
+   `static`: las variables existen aunque ninguna utilidad las use, para que
+   el CSS a mano pueda leer var(--text-sm). */
+@theme static {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.5625rem;
+  --text-2xl--line-height: 2rem;
+}
+
+/* Colores editoriales y de datos como utilidades que siguen el tema:
+   text-fi-navy, bg-fi-gold/60, border-fi-navy, bg-fi-header, bg-fi-chart-3…
+   Es la forma canónica; text-(--fi-navy) sigue siendo válido.
+   `inline`: la utilidad usa var(--fi-navy) directamente, así que un
+   contenedor con su propio data-fi-theme recibe SU azul marino. */
+@theme inline {
+  --color-fi-navy: var(--fi-navy);
+  --color-fi-gold: var(--fi-gold);
+  --color-fi-header: var(--fi-header-bg);
+
+  --color-fi-chart-1: var(--fi-chart-1);
+  --color-fi-chart-2: var(--fi-chart-2);
+  --color-fi-chart-3: var(--fi-chart-3);
+  --color-fi-chart-4: var(--fi-chart-4);
+  --color-fi-chart-5: var(--fi-chart-5);
+  --color-fi-chart-6: var(--fi-chart-6);
+  --color-fi-chart-7: var(--fi-chart-7);
+  --color-fi-chart-8: var(--fi-chart-8);
+
+  --color-fi-chart-seq-1: var(--fi-chart-seq-1);
+  --color-fi-chart-seq-2: var(--fi-chart-seq-2);
+  --color-fi-chart-seq-3: var(--fi-chart-seq-3);
+  --color-fi-chart-seq-4: var(--fi-chart-seq-4);
+  --color-fi-chart-seq-5: var(--fi-chart-seq-5);
+}
+
+@layer base {
+  /* Safari 26 ya no lee <meta name="theme-color"> y tiñe su barra con el
+     fondo de la página: el rojo de la cinta, que es lo que hay arriba. El
+     <body> conserva su fondo (Nuxt UI lo pinta con --ui-bg), así que esto
+     solo se ve en el rebote del scroll y en la barra del navegador.
+     `data-fi-chrome="off"` en <html> lo apaga: lo pone el módulo con
+     `fiUi: { chrome: false }` (o createFiUi({ chrome: false })), y un layout
+     sin cinta (un dashboard) puede ponerlo solo para sus páginas con
+     useHead({ htmlAttrs: { 'data-fi-chrome': 'off' } }). */
+  html:not([data-fi-chrome="off"]) {
+    background-color: var(--ui-color-primary-500);
+  }
+
+  /* El body cubre siempre la ventana: el rojo de <html> solo debe asomar en
+     el rebote del scroll, nunca como fondo de una página vacía (una vista que
+     falla al cargar se veía como una pantalla roja). */
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background-color: var(--ui-color-primary-100);
+    color: var(--ui-text-highlighted);
+  }
+}
+
+/* =========================================================================
+   Piezas editoriales de los sitios FI (gaceta, micrositios). Clases planas y
+   no componentes porque se aplican a cualquier elemento: un <span>, un <h3>,
+   un enlace. Toman --fi-navy / --fi-gold, así que siguen al tema activo.
+   Viven en la capa `components`: cualquier utilidad las corrige
+   (`fi-label text-fi-navy`).
+   ========================================================================= */
+@layer components {
+  /* Rótulo de dato, de campo o de sección pequeña ("Correo", "Última
+     sesión"): versalitas espaciadas, atenuado — nombra lo que sigue, no
+     compite con ello. Es la receta de los encabezados de tabla. */
+  .fi-label {
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ui-text-muted);
+  }
+
+  /* Etiqueta-flecha: antetítulo editorial de sección ("¿Cuáles son los
+     cambios?"). Una por vista o sección, como mucho; para rotular datos,
+     .fi-label. */
+  .fi-tag {
+    display: inline-block;
+    background-color: var(--fi-navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 0.35rem 1.15rem 0.35rem 0.85rem;
+    clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
+  }
+
+  /* Banda-píldora para títulos de bloque dentro de una sección. */
+  .fi-band {
+    display: inline-block;
+    background-color: var(--fi-navy);
+    color: #fff;
+    border-radius: 9999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.55rem 1.6rem;
+  }
+
+  /* Antetítulo editorial del portal: serif, caja de oración. */
+  .fi-eyebrow {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    color: var(--ui-text-muted);
+  }
+
+  /* Acento serif en itálica dentro de un titular ("con ocho planes"). La
+     itálica de Playfair viene en fonts.css. */
+  .fi-serif-accent {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* Enlace de menú del portal: versalitas espaciadas. */
+  .fi-navlink {
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    font-weight: 700;
+    font-size: 0.8125rem;
+  }
+}

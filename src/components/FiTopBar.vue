@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import UIcon from '@nuxt/ui/components/Icon.vue'
 import ULink from '@nuxt/ui/components/Link.vue'
+import { fiReadableTextOn } from '../composables/fiComponents'
 import { useFiConfig } from '../composables/useFiConfig'
 import { fiTopBarSocial, fiTopLinks } from '../fi-data'
 import type { FiLink, FiSocialLink } from '../fi-data'
@@ -19,6 +20,22 @@ import { useFiT, useFiText } from '../i18n'
  *
  * El fondo es primary-500 y no un rojo fijo: un tema especial (luto, 8M)
  * también tiñe la cinta.
+ *
+ * Dos desviaciones deliberadas del portal, por contraste (AA, 4.5:1):
+ * - El hover y el foco de los enlaces son neutral-500 y no #ADB5BD, que con
+ *   texto blanco daba 2.07:1 (lo mismo hace el micrositio de planes).
+ * - El nombre que despliega cada red toma texto oscuro cuando el color de la
+ *   marca es claro: blanco sobre el naranja de Instagram daba 1.75:1.
+ *
+ * Ranura `end`: controles del proyecto al final de la cinta (p. ej. el cambio
+ * de idioma). Recibe `controlClass`, la receta de un botón de la cinta (alto,
+ * tipografía, hover y foco), para no copiar estos estilos con un hex fijo:
+ *
+ *   <template #end="{ controlClass }">
+ *     <button type="button" :class="controlClass">English</button>
+ *   </template>
+ *
+ * `--fi-topbar-hover` es pública: el fondo de hover/foco de la cinta.
  */
 const props = defineProps<{
   links?: FiLink[]
@@ -31,6 +48,19 @@ const text = useFiText()
 
 const links = computed(() => props.links ?? config.value.topBar?.links ?? fiTopLinks)
 const social = computed(() => props.social ?? config.value.topBar?.social ?? fiTopBarSocial)
+
+// Receta de un control en la ranura `end`, con utilidades (no CSS con
+// alcance): así el proyecto puede ajustarla con sus propias clases.
+const controlClass = [
+  'inline-flex h-full items-center gap-1.5 px-2.5 text-[0.8125rem] font-semibold text-white',
+  'transition-colors hover:bg-(--fi-topbar-hover) focus-visible:bg-(--fi-topbar-hover)',
+  'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white',
+  'motion-reduce:transition-none',
+].join(' ')
+
+function socialStyle(color: string | undefined) {
+  return color ? { '--fi-social-color': color, '--fi-social-text': fiReadableTextOn(color) } : undefined
+}
 
 // Alto real de la cinta en --fi-topbar-offset: en móvil los enlaces ocupan
 // varios renglones y las portadas de pantalla completa lo necesitan para
@@ -81,7 +111,6 @@ defineExpose({ root })
                 :to="link.to"
                 :target="link.target"
                 class="fi-topbar__link"
-                :aria-haspopup="link.children?.length ? 'true' : undefined"
               >
                 <!-- Etiqueta e ícono pegados: un salto de línea aquí deja un
                      espacio que ensancha el enlace 4 px respecto al portal. -->
@@ -133,7 +162,7 @@ defineExpose({ root })
                 :target="item.target ?? '_blank'"
                 :aria-label="text(item.label)"
                 class="fi-topbar__social-link"
-                :style="item.color ? { '--fi-social-color': item.color } : undefined"
+                :style="socialStyle(item.color)"
               >
                 <span class="fi-topbar__social-icon">
                   <UIcon
@@ -154,7 +183,10 @@ defineExpose({ root })
             v-if="$slots.end"
             class="fi-topbar__end"
           >
-            <slot name="end" />
+            <slot
+              name="end"
+              v-bind="{ controlClass }"
+            />
           </div>
         </div>
       </div>
@@ -163,11 +195,12 @@ defineExpose({ root })
 </template>
 
 <style scoped>
-/* Variables del #top-bar del portal. */
+/* Variables del #top-bar del portal. El hover no es el del portal (#ADB5BD,
+   neutral-400): con texto blanco no llega a AA. Ver el comentario de arriba. */
 .fi-topbar {
   --fi-topbar-height: 45px;
   --fi-topbar-border: rgb(0 0 0 / 0.1);
-  --fi-topbar-hover: #ADB5BD;
+  --fi-topbar-hover: var(--color-fi-neutral-500);
   position: relative;
   z-index: 60;
   border-bottom: 1px solid var(--fi-topbar-border);
@@ -333,7 +366,7 @@ defineExpose({ root })
 }
 .fi-topbar__social-link:hover,
 .fi-topbar__social-link:focus-visible {
-  color: #F8F9FA;
+  color: var(--fi-social-text, var(--color-fi-neutral-50));
   background-color: var(--fi-social-color, var(--fi-topbar-hover));
 }
 .fi-topbar__social-link:focus-visible {

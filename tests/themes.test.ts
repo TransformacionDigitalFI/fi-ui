@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { contrast, hexToOklch } from '../src/color'
-import { FI_CHROME_COLOR } from '../src/chrome'
+import { FI_CHROME_COLOR, fiChromeColor } from '../src/chrome'
 import { fiThemeIds, fiThemes } from '../src/themes/registry'
-import { baseDecls, cssThemes, headerBg, navyStep, neutral, ROLES, seedsOf, stepColor, STEPS, surface } from './css'
+import { baseDecls, cssThemes, headerBg, neutral, ROLES, scopedThemeDecls, seedsOf, stepColor, STEPS, themeScale } from './css'
 
 const AA = 4.5
 
@@ -18,6 +18,13 @@ describe('registro y CSS describen los mismos temas', () => {
     }
   })
 
+  it('el color de la barra del navegador de cada tema es su primario', () => {
+    for (const id of fiThemeIds) {
+      expect(fiThemes[id].chromeColor.toUpperCase(), id).toBe(seedsOf(id).primary.toUpperCase())
+      expect(fiChromeColor(id), id).toBe(fiThemes[id].chromeColor)
+    }
+  })
+
   it('las escalas se derivan de la semilla en todos los pasos', () => {
     for (const role of ROLES) {
       for (const step of STEPS) {
@@ -25,63 +32,44 @@ describe('registro y CSS describen los mismos temas', () => {
       }
     }
   })
+
+  it('un tema con alcance local reenlaza todos los pasos y los tokens runtime', () => {
+    for (const role of ROLES) {
+      for (const step of STEPS) {
+        expect(scopedThemeDecls[`--ui-color-${role}-${step}`], `${role}-${step}`).toBe(`var(--color-fi-${role}-${step})`)
+      }
+      expect(scopedThemeDecls[`--ui-${role}`], role).toMatch(new RegExp(`^var\\(--ui-color-${role}-\\d+\\)$`))
+    }
+  })
 })
 
-describe.each(fiThemeIds)('tema %s', (id) => {
-  const seeds = seedsOf(id)
+describe.each(fiThemeIds)('tema %s: escalas', (id) => {
+  const scale = themeScale(id)
 
-  it.each(ROLES)('%s: botón sólido legible en modo claro (500 con texto blanco)', (role) => {
-    const bg = stepColor(role, 500, seeds[role])
-    expect(contrast(bg, '#FFFFFF'), `${role} ${bg}`).toBeGreaterThanOrEqual(AA)
+  it.each(ROLES)('%s: la escala va de claro a oscuro sin saltos hacia atrás', (role) => {
+    const lightness = STEPS.map(step => hexToOklch(scale(role, step)).l)
+    for (let i = 1; i < lightness.length; i++) expect(lightness[i]).toBeLessThan(lightness[i - 1]!)
   })
 
-  it.each(ROLES)('%s: botón sólido legible en modo oscuro (400 con texto neutral-900)', (role) => {
-    const bg = stepColor(role, 400, seeds[role])
+  it.each(ROLES)('%s: botón sólido en una isla oscura (400 con texto neutral-900)', (role) => {
+    const bg = scale(role, 400)
     expect(contrast(bg, neutral(900)), `${role} ${bg}`).toBeGreaterThanOrEqual(AA)
   })
 
   it('enlace activo del header oscuro legible (primary-400 sobre --fi-header-bg)', () => {
-    const link = stepColor('primary', 400, seeds.primary)
+    const link = scale('primary', 400)
     expect(contrast(link, headerBg), link).toBeGreaterThanOrEqual(AA)
   })
-
-  it('texto blanco legible en la etiqueta-flecha (--fi-navy)', () => {
-    const navy = stepColor('tertiary', navyStep, seeds.tertiary)
-    expect(contrast('#FFFFFF', navy), navy).toBeGreaterThanOrEqual(AA)
-  })
-
-  it('títulos en --fi-navy legibles sobre el fondo de página', () => {
-    const navy = stepColor('tertiary', navyStep, seeds.tertiary)
-    expect(contrast(navy, surface('--ui-bg')), navy).toBeGreaterThanOrEqual(AA)
-  })
-
-  it.each(ROLES)('%s: la escala va de claro a oscuro sin saltos hacia atrás', (role) => {
-    const lightness = STEPS.map(step => hexToOklch(stepColor(role, step, seeds[role])).l)
-    for (let i = 1; i < lightness.length; i++) expect(lightness[i]).toBeLessThan(lightness[i - 1]!)
-  })
 })
 
-describe('neutro', () => {
-  it('texto atenuado de Nuxt UI (500) legible sobre blanco y sobre bg-muted', () => {
-    expect(contrast(neutral(500), '#FFFFFF')).toBeGreaterThanOrEqual(AA)
-    expect(contrast(neutral(500), neutral(50))).toBeGreaterThanOrEqual(AA)
-  })
-
-  it('texto atenuado en oscuro (400) legible sobre el pie (700) y sobre bg (900)', () => {
+describe('neutro grafito en islas oscuras', () => {
+  // En claro el texto atenuado es pizarra (tests/surfaces.test.ts); el
+  // grafito es la escala de las islas: Nuxt UI usa 400 como text-muted
+  // sobre neutral-900 (bg) y el pie usa neutral-700.
+  it('texto atenuado (400) legible sobre el pie (700), sobre bg (900) y sobre --fi-header-bg', () => {
     expect(contrast(neutral(400), neutral(700))).toBeGreaterThanOrEqual(AA)
     expect(contrast(neutral(400), neutral(900))).toBeGreaterThanOrEqual(AA)
-  })
-})
-
-describe('superficies de modo claro (fondo pizarra, tarjetas blancas)', () => {
-  it.each(['--ui-bg', '--ui-bg-elevated', '--ui-bg-muted'])('texto, secundario y atenuado legibles sobre %s', (bg) => {
-    expect(contrast(surface('--ui-text'), surface(bg))).toBeGreaterThanOrEqual(AA)
-    expect(contrast(surface('--ui-text-muted'), surface(bg))).toBeGreaterThanOrEqual(AA)
-    expect(contrast(surface('--ui-text-dimmed'), surface(bg))).toBeGreaterThanOrEqual(AA)
-  })
-
-  it('el botón primario se distingue del fondo de página (3:1, componente)', () => {
-    expect(contrast(stepColor('primary', 500, seedsOf('fi').primary), surface('--ui-bg'))).toBeGreaterThanOrEqual(3)
+    expect(contrast(neutral(400), headerBg)).toBeGreaterThanOrEqual(AA)
   })
 })
 

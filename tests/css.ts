@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { mixOklch } from '../src/color'
+import colors from 'tailwindcss/colors'
+import { composite, mixOklch, mixOklchColors, toHexColor } from '../src/color'
+import { fiStatusColors } from '../src/app-config'
 
 /**
  * Lee las semillas y la fórmula de las escalas directamente del CSS, para que
@@ -11,21 +13,44 @@ const read = (file: string) => readFileSync(fileURLToPath(new URL(`../src/css/${
 
 export const tokensCss = read('tokens.css')
 export const themesCss = read('themes.css')
+export const noFontsCss = read('no-fonts.css')
 
 export type Role = 'primary' | 'secondary' | 'tertiary'
 export const ROLES: Role[] = ['primary', 'secondary', 'tertiary']
 export const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const
 export type Step = typeof STEPS[number]
 
+export type Status = keyof typeof fiStatusColors
+export const STATUSES = Object.keys(fiStatusColors) as Status[]
+
+export const WHITE = '#FFFFFF'
+
 function declarations(block: string): Record<string, string> {
   const out: Record<string, string> = {}
-  for (const m of block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) out[m[1]!] = m[2]!.trim()
+  // Sin comentarios: un `;` dentro de un comentario partiría la declaración.
+  const clean = block.replace(/\/\*[\s\S]*?\*\//g, '')
+  for (const m of clean.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) out[m[1]!] = m[2]!.trim()
   return out
 }
 
-const baseBlock = /:root,\s*\[data-fi-theme\]\s*\{([\s\S]*?)\n {2}\}/.exec(tokensCss)?.[1]
-if (!baseBlock) throw new Error('No se encontró el bloque base en tokens.css')
-export const baseDecls = declarations(baseBlock)
+/** Une las declaraciones de todos los bloques con ese selector exacto. */
+function blocks(css: string, selector: RegExp): Record<string, string> {
+  const re = new RegExp(`(?:^|\\n)\\s*${selector.source}\\s*\\{([\\s\\S]*?)\\n {2}\\}`, 'g')
+  const found = [...css.matchAll(re)]
+  if (!found.length) throw new Error(`No se encontró el bloque ${selector.source}`)
+  return Object.assign({}, ...found.map(m => declarations(m[1]!)))
+}
+
+export const baseDecls = blocks(tokensCss, /:root,\s*\[data-fi-theme\]/)
+
+/** Bloques de modo claro: superficies y pasos de roles y estados. */
+export const lightDecls = blocks(tokensCss, /:root:not\(\.dark\),\s*\.light:not\(\.dark\)/)
+
+/** Bloques `:root` sueltos (radio, paleta de datos). */
+export const rootDecls = blocks(tokensCss, /:root/)
+
+/** Reenlace de los temas con alcance local (un contenedor con data-fi-theme). */
+export const scopedThemeDecls = blocks(tokensCss, /\[data-fi-theme\]:not\(:root\)/)
 
 /** Temas declarados en themes.css: id → declaraciones. */
 export const cssThemes: Record<string, Record<string, string>> = Object.fromEntries(
@@ -53,25 +78,78 @@ export function stepColor(role: Role, step: Step, seed: string): string {
   return mixOklch(seed, Number(m[1]) / 100, m[2] as 'white' | 'black')
 }
 
+/** Un tema resuelto: cada paso de cada rol. */
+export function themeScale(themeId: string): (role: Role, step: Step) => string {
+  const seeds = seedsOf(themeId)
+  return (role, step) => stepColor(role, step, seeds[role])
+}
+
 export const neutral = (step: Step) => {
   const value = baseDecls[`--color-fi-neutral-${step}`]
   if (!value) throw new Error(`Falta --color-fi-neutral-${step}`)
   return value
 }
 
-const surfaceBlock = /:root:not\(\.dark\),\s*\.light\s*\{([\s\S]*?)\n {2}\}/.exec(tokensCss)?.[1]
-if (!surfaceBlock) throw new Error('No se encontró el bloque de superficies en tokens.css')
-const surfaceDecls = declarations(surfaceBlock)
-
-/** Resuelve un token de superficie a hex (literal o var(--color-fi-…)). */
-export function surface(token: string): string {
-  const value = surfaceDecls[token]
-  if (!value) throw new Error(`Falta ${token} en superficies`)
-  const ref = /^var\((--[\w-]+)\)$/.exec(value)?.[1]
-  const hex = ref ? baseDecls[ref] : value
-  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) throw new Error(`${token} no resuelve a hex: ${value}`)
-  return hex.toUpperCase()
+/**
+ * Resuelve un valor de color de las escalas fijas: literal, var(--color-fi-…)
+ * (neutro o pizarra) o color-mix(in oklch, var(a) p%, var(b)).
+ */
+export function resolveFixed(value: string): string {
+  const v = value.trim()
+  if (/^#[0-9a-f]{6}$/i.test(v)) return v.toUpperCase()
+  const ref = /^var\((--[\w-]+)\)$/.exec(v)?.[1]
+  if (ref) {
+    const target = baseDecls[ref] ?? lightDecls[ref] ?? rootDecls[ref]
+    if (!target) throw new Error(`${ref} no está declarado`)
+    return resolveFixed(target)
+  }
+  const mix = /^color-mix\(in oklch, var\((--[\w-]+)\)(?: (\d+)%)?, var\((--[\w-]+)\)(?: (\d+)%)?\)$/.exec(v)
+  if (mix) {
+    const a = resolveFixed(`var(${mix[1]})`)
+    const b = resolveFixed(`var(${mix[3]})`)
+    const wA = mix[2] ? Number(mix[2]) / 100 : mix[4] ? 1 - Number(mix[4]) / 100 : 0.5
+    return mixOklchColors(a, b, wA)
+  }
+  throw new Error(`Valor no resoluble a hex: ${value}`)
 }
+
+/** Token de superficie o texto de modo claro, ya en hex. */
+export function surface(token: string): string {
+  const value = lightDecls[token]
+  if (!value) throw new Error(`Falta ${token} en el bloque de modo claro`)
+  return resolveFixed(value)
+}
+
+/** Las tres superficies claras sobre las que se lee todo. */
+export const SURFACES = {
+  'bg-default (página)': () => surface('--ui-bg'),
+  'bg-elevated (tarjeta)': () => surface('--ui-bg-elevated'),
+  'bg-muted (banda)': () => surface('--ui-bg-muted'),
+} as const
+
+/**
+ * Paso de la escala que un token runtime usa en modo claro:
+ * `--ui-success: var(--ui-color-success-800)` → 800. Sin remapeo, 500 (lo que
+ * pone Nuxt UI).
+ */
+export function lightRuntimeStep(key: Role | Status): Step {
+  const value = lightDecls[`--ui-${key}`]
+  if (!value) return 500
+  const m = new RegExp(`^var\\(--ui-color-${key}-(\\d+)\\)$`).exec(value)
+  if (!m) throw new Error(`--ui-${key} debe apuntar a un paso: ${value}`)
+  return Number(m[1]) as Step
+}
+
+/** Color de estado de la paleta de Tailwind que mapea fiStatusColors. */
+export function statusColor(status: Status, step: Step): string {
+  const palette = (colors as unknown as Record<string, Record<number, string>>)[fiStatusColors[status]]
+  const value = palette?.[step]
+  if (!value) throw new Error(`Tailwind no tiene ${fiStatusColors[status]}-${step}`)
+  return toHexColor(value)
+}
+
+/** `bg-{color}/10` sobre una superficie: el fondo de una insignia soft. */
+export const tint = (color: string, over: string, alpha = 0.1) => composite(color, alpha, over)
 
 export const headerBg = (() => {
   const value = baseDecls['--fi-header-bg']
@@ -79,9 +157,12 @@ export const headerBg = (() => {
   return value
 })()
 
-/** --fi-navy apunta a un paso de la escala terciaria; devuelve cuál. */
-export const navyStep = (() => {
-  const m = /^var\(--color-fi-tertiary-(\d+)\)$/.exec(baseDecls['--fi-navy'] ?? '')
-  if (!m) throw new Error('--fi-navy debe ser var(--color-fi-tertiary-N)')
+/** --fi-navy / --fi-gold apuntan a un paso de una escala; devuelve cuál. */
+function roleToken(token: string, role: Role): Step {
+  const m = new RegExp(`^var\\(--color-fi-${role}-(\\d+)\\)$`).exec(baseDecls[token] ?? '')
+  if (!m) throw new Error(`${token} debe ser var(--color-fi-${role}-N)`)
   return Number(m[1]) as Step
-})()
+}
+
+export const navyStep = roleToken('--fi-navy', 'tertiary')
+export const goldStep = roleToken('--fi-gold', 'secondary')

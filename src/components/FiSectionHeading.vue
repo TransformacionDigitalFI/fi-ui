@@ -1,15 +1,21 @@
 <script setup lang="ts">
+import { useFiText } from '../i18n'
+import type { LocalizedText } from '../i18n'
+
 /**
  * Encabezado de sección de los sitios FI (gaceta, micrositios): etiqueta-flecha
  * azul marino como antetítulo, título en azul marino, filete dorado con rombo
  * al centro y descripción. Para una sección completa con contenido, ponlo en el
  * slot `header` de UPageSection o arriba de tu propio contenedor.
+ *
+ * Es la pieza editorial (centrada, grande). El encabezado de una vista de
+ * trabajo —dashboard o trámite público— es FiPageHeader.
  */
 const props = withDefaults(defineProps<{
-  title: string
+  title: LocalizedText
   /** Antetítulo en la etiqueta-flecha (`.fi-tag`). */
-  eyebrow?: string
-  description?: string
+  eyebrow?: LocalizedText
+  description?: LocalizedText
   align?: 'center' | 'start'
   as?: 'h1' | 'h2' | 'h3'
 }>(), {
@@ -18,6 +24,8 @@ const props = withDefaults(defineProps<{
   align: 'center',
   as: 'h2',
 })
+
+const text = useFiText()
 </script>
 
 <template>
@@ -28,14 +36,14 @@ const props = withDefaults(defineProps<{
     <span
       v-if="props.eyebrow"
       class="fi-tag mb-4"
-    >{{ props.eyebrow }}</span>
+    >{{ text(props.eyebrow) }}</span>
 
     <component
       :is="props.as"
-      class="text-2xl font-bold tracking-tight text-balance text-(--fi-navy) sm:text-3xl lg:text-4xl"
+      class="text-2xl font-bold tracking-tight text-balance text-fi-navy sm:text-3xl lg:text-4xl"
     >
       <slot name="title">
-        {{ props.title }}
+        {{ text(props.title) }}
       </slot>
     </component>
 
@@ -44,9 +52,9 @@ const props = withDefaults(defineProps<{
       :class="props.align === 'center' ? 'mx-auto' : ''"
       aria-hidden="true"
     >
-      <span class="h-px flex-1 bg-(--fi-gold)/60" />
-      <span class="size-2 rotate-45 bg-(--fi-gold)" />
-      <span class="h-px flex-1 bg-(--fi-gold)/60" />
+      <span class="h-px flex-1 bg-fi-gold/60" />
+      <span class="size-2 rotate-45 bg-fi-gold" />
+      <span class="h-px flex-1 bg-fi-gold/60" />
     </div>
 
     <p
@@ -54,7 +62,7 @@ const props = withDefaults(defineProps<{
       class="mt-4 text-base text-pretty text-muted"
     >
       <slot name="description">
-        {{ props.description }}
+        {{ props.description ? text(props.description) : '' }}
       </slot>
     </p>
   </div>

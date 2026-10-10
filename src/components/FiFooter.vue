@@ -24,8 +24,10 @@ import FiLogo from './FiLogo.vue'
  * El slot por defecto es para contenido propio del sitio (marca, columnas);
  * ocupa la fila completa debajo de las tres columnas.
  *
- * Contacto, redes y enlaces son por proyecto: prop > `fiUi.footer` en la
- * configuración > los del portal.
+ * Contacto, redes, enlaces, aviso de privacidad y leyenda legal son por
+ * proyecto, todos con la misma precedencia: prop > `fiUi.footer` en la
+ * configuración > los del portal. `false` (en prop o configuración) quita el
+ * aviso o la leyenda; no cae al valor del portal.
  */
 const props = withDefaults(defineProps<{
   contact?: FiContact
@@ -37,8 +39,8 @@ const props = withDefaults(defineProps<{
   contact: undefined,
   social: undefined,
   links: undefined,
-  privacyUrl: () => fiPrivacyUrl,
-  legalNotice: () => fiLegalNotice,
+  privacyUrl: undefined,
+  legalNotice: undefined,
 })
 
 const config = useFiConfig()
@@ -47,6 +49,19 @@ const text = useFiText()
 const contact = computed(() => props.contact ?? config.value.footer?.contact ?? fiContact)
 const social = computed(() => props.social ?? config.value.footer?.social ?? fiSocialLinks)
 const links = computed(() => props.links ?? config.value.footer?.links ?? [])
+const privacyUrl = computed(() => props.privacyUrl ?? config.value.footer?.privacyUrl ?? fiPrivacyUrl)
+const legalNotice = computed(() => props.legalNotice ?? config.value.footer?.legalNotice ?? fiLegalNotice)
+
+// Pestaña nueva solo para sitios externos: una ruta propia del proyecto
+// (`/privacidad`) se abre en la misma, como cualquier enlace interno.
+const isExternal = (url: string) => /^(?:[a-z][a-z\d+.-]*:)?\/\//i.test(url)
+
+// Un teléfono escrito con lada internacional (`+52 55 …`) se usa tal cual; uno
+// local, como los del portal, se marca desde México.
+const phoneHref = computed(() => {
+  const digits = contact.value.phone.replace(/[^\d+]/g, '')
+  return `tel:${digits.startsWith('+') ? digits : `+52${digits}`}`
+})
 
 const year = new Date().getFullYear()
 </script>
@@ -68,10 +83,10 @@ const year = new Date().getFullYear()
             height="67px"
           />
           <ULink
-            v-if="props.privacyUrl"
+            v-if="privacyUrl"
             raw
-            :to="props.privacyUrl"
-            target="_blank"
+            :to="privacyUrl"
+            :target="isExternal(privacyUrl) ? '_blank' : undefined"
             class="mt-4 inline-block text-sm text-muted transition-colors hover:text-highlighted"
           >
             {{ t('privacyNotice') }}
@@ -99,7 +114,7 @@ const year = new Date().getFullYear()
             </dt>
             <dd class="text-muted">
               <a
-                :href="`tel:+52${contact.phone.replace(/\s+/g, '')}`"
+                :href="phoneHref"
                 class="hover:text-highlighted"
               >{{ contact.phone }}</a>
             </dd>
@@ -149,17 +164,21 @@ const year = new Date().getFullYear()
       </nav>
     </template>
 
+    <!-- El hover de un botón neutro ghost es bg-accented (fiAppConfig), que en
+         una isla `dark` es neutral-700: el mismo gris de este pie, así que no
+         se veía. Aquí aclara el fondo en lugar de oscurecerlo. -->
     <template #right>
       <UButton
         v-for="item in social"
         :key="item.to"
         :to="item.to"
-        target="_blank"
+        :target="item.target ?? '_blank'"
         :icon="item.icon"
         :aria-label="text(item.label)"
         color="neutral"
         variant="ghost"
         size="sm"
+        class="hover:bg-white/10 active:bg-white/15"
       />
     </template>
 
@@ -167,10 +186,10 @@ const year = new Date().getFullYear()
       <UContainer class="py-8 text-sm text-muted">
         <p>{{ t('rights', { year }) }}</p>
         <p
-          v-if="props.legalNotice"
+          v-if="legalNotice"
           class="mt-3 max-w-5xl leading-relaxed"
         >
-          {{ text(props.legalNotice) }}
+          {{ text(legalNotice) }}
         </p>
       </UContainer>
     </template>

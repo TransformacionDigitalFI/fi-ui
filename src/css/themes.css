@@ -8,9 +8,20 @@
 
    Para añadir uno:
      1. Bloque aquí con sus semillas (y su listón si conmemora algo).
-     2. Entrada en src/themes/registry.ts con nombre, descripción y fechas.
-     3. `npm test` — verifica contraste AA de cada semilla y que CSS y
-        registro digan los mismos temas.
+     2. Entrada en src/themes/registry.ts con nombre, descripción, fechas y
+        `chromeColor` (= su --fi-seed-primary).
+     3. `npm test` — verifica contraste AA de cada semilla, que CSS y
+        registro digan los mismos temas y que el primario no se confunda
+        con un color de estado.
+
+   El primario de un tema es MARCA, nunca estado. Algunos caen cerca de un
+   estado por su propio motivo — el verde de salud mental junto a success,
+   el naranja del 25N junto a warning, el rosa de cáncer de mama y el rojo FI
+   junto a error —, así que ningún estado se comunica solo con color: lleva
+   ícono y texto (FiStatusBadge), y el primario no se usa para decir "bien"
+   ni "mal". Los estados se pintan en el paso 800 y los primarios en el 500:
+   la luminosidad los separa. tests/contrast.test.ts exige ΔE OKLab ≥ 0.07
+   entre cada primario y cada estado, para que un tema nuevo no copie uno.
 
    Se activan con `data-fi-theme="<id>"` en <html> (todo el sitio) o en
    cualquier contenedor (solo ese bloque).

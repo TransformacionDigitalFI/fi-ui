@@ -1,6 +1,7 @@
 import { inject, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { FiContact, FiLink, FiSocialLink } from '../fi-data'
+import type { LocalizedText } from '../i18n'
 
 /**
  * Contenido institucional que cambia por proyecto: los enlaces y redes de la
@@ -9,7 +10,8 @@ import type { FiContact, FiLink, FiSocialLink } from '../fi-data'
  *
  * Precedencia en cada componente: prop explícita > esta configuración > datos
  * del portal FI (src/fi-data.ts). Un arreglo vacío es una decisión ("sin
- * redes"), no un hueco: no cae al valor del portal.
+ * redes"), no un hueco: no cae al valor del portal. Lo mismo `false` en
+ * `privacyUrl` y `legalNotice`.
  */
 export interface FiUiConfig {
   topBar?: {
@@ -20,6 +22,10 @@ export interface FiUiConfig {
     social?: FiSocialLink[]
     links?: FiLink[]
     contact?: FiContact
+    /** URL del aviso de privacidad; `false` lo quita. */
+    privacyUrl?: string | false
+    /** Leyenda legal bajo los derechos; `false` la quita. */
+    legalNotice?: LocalizedText | false
   }
 }
 

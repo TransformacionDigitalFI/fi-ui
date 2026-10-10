@@ -1,10 +1,12 @@
 /**
  * Matemática de color mínima para verificar los temas sin navegador.
  *
- * Reproduce lo que hace el CSS del paquete — `color-mix(in oklch, semilla p%,
- * white|black)` — para poder calcular contraste WCAG de cada escala en las
- * pruebas. No es una librería de color general: solo sRGB ⇄ OKLCH, la mezcla
- * en OKLCH tal como la define CSS Color 4 y el contraste relativo.
+ * Reproduce lo que hace el CSS del paquete — `color-mix(in oklch, …)` — para
+ * poder calcular contraste WCAG de cada escala en las pruebas, la distancia
+ * entre colores (ΔE en OKLab) y cómo los ve una persona con daltonismo. No es
+ * una librería de color general: solo sRGB ⇄ OKLCH, la mezcla en OKLCH tal
+ * como la define CSS Color 4, la composición de un tinte translúcido, el
+ * contraste relativo y la simulación de Machado et al. (2009).
  */
 
 export interface Oklch { l: number, c: number, h: number }
@@ -101,4 +103,77 @@ export function relativeLuminance(hex: string): number {
 export function contrast(a: string, b: string): number {
   const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x) as [number, number]
   return (hi + 0.05) / (lo + 0.05)
+}
+
+/**
+ * `color-mix(in oklch, a weightA, b)` entre dos colores cualesquiera, con el
+ * matiz por el arco corto (el de CSS por defecto). Si uno es acromático su
+ * matiz no cuenta y se toma el del otro, como en CSS.
+ */
+export function mixOklchColors(a: string, b: string, weightA = 0.5): string {
+  const x = hexToOklch(a)
+  const y = hexToOklch(b)
+  const ACHROMATIC = 1e-4
+  const hx = x.c < ACHROMATIC ? y.h : x.h
+  const hy = y.c < ACHROMATIC ? x.h : y.h
+  let dh = hy - hx
+  if (dh > 180) dh -= 360
+  if (dh < -180) dh += 360
+  const h = hx + dh * (1 - weightA)
+  return oklchToHex({
+    l: x.l * weightA + y.l * (1 - weightA),
+    c: x.c * weightA + y.c * (1 - weightA),
+    h: h < 0 ? h + 360 : h % 360,
+  })
+}
+
+/** `oklch(44.8% 0.119 151.328)` (la forma de la paleta de Tailwind) → hex. */
+export function parseOklch(value: string): string {
+  const m = /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)\s*\)$/i.exec(value.trim())
+  if (!m) throw new Error(`Color OKLCH no válido: ${value}`)
+  const l = Number(m[1]) / (m[2] ? 100 : 1)
+  return oklchToHex({ l, c: Number(m[3]), h: Number(m[4]) })
+}
+
+/** Hex o `oklch(…)` → hex. */
+export function toHexColor(value: string): string {
+  return value.trim().startsWith('oklch') ? parseOklch(value) : toHex(parseHex(value))
+}
+
+/**
+ * Un color con opacidad sobre un fondo opaco (`bg-success/10` encima de una
+ * tarjeta): la mezcla que ve el ojo, hecha en sRGB como la compone el
+ * navegador.
+ */
+export function composite(fg: string, alpha: number, bg: string): string {
+  const f = parseHex(fg)
+  const b = parseHex(bg)
+  return toHex(f.map((v, i) => v * alpha + b[i]! * (1 - alpha)) as Rgb)
+}
+
+// Machado, Oliveira y Fernandes (2009), severidad 1.0, sobre sRGB lineal.
+const CVD: Record<'protan' | 'deutan', [Rgb, Rgb, Rgb]> = {
+  protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  deutan: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.01182, 0.04294, 0.968881]],
+}
+
+export type FiVision = 'normal' | 'protan' | 'deutan'
+
+function oklabFor(hex: string, vision: FiVision): Rgb {
+  const lin = parseHex(hex).map(toLinear) as Rgb
+  if (vision === 'normal') return linearToOklab(lin)
+  const m = CVD[vision]
+  const clamp = (v: number) => Math.min(1, Math.max(0, v))
+  return linearToOklab(m.map(row => clamp(row[0] * lin[0] + row[1] * lin[1] + row[2] * lin[2])) as Rgb)
+}
+
+/**
+ * Distancia entre dos colores en OKLab (0 = iguales; ~0.02 es la diferencia
+ * apenas perceptible). Con `vision` mide cómo los distingue alguien con
+ * protanopia o deuteranopia.
+ */
+export function deltaEOk(a: string, b: string, vision: FiVision = 'normal'): number {
+  const x = oklabFor(a, vision)
+  const y = oklabFor(b, vision)
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2])
 }
