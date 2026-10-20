@@ -1328,6 +1328,12 @@ dentro. Va en una tarjeta angosta.
   navegar por encabezados [B-16]. Receta completa en
   [public-utility](archetypes/public-utility.md).
 - `autocomplete` en cada campo; nada de bloquear pegar.
+- Atributos HTML de un campo (`'aria-required'`, `spellcheck`, `autocapitalize`):
+  `AuthFormField` no los tipa y en el literal el typecheck los rechaza. Ponlos
+  en un objeto aparte y espárcelos en el campo
+  (`{ name: 'email', type: 'email', ...emailAttrs }`); UAuthForm los entrega
+  al `<input>`. Si además necesitas eventos del control (`@focus`), usa el
+  slot `#<name>-field` con tu propio `UInput`.
 
 ### UPageHero, UPageSection y UPageCard (sitio público)
 

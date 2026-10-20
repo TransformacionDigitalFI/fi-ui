@@ -49,26 +49,32 @@ useHead({ title: 'Iniciar sesión – Programa de Salud Mental' })
 const route = useRoute()
 const authForm = useTemplateRef('authForm')
 
+// `AuthFormField` solo tipa las props de UInput y UFormField: escritos en el
+// literal, `'aria-required'`, `spellcheck` o `autocapitalize` no pasan el
+// typecheck (propiedad de más). Van en un objeto aparte y se esparcen: el
+// spread no pasa por esa revisión y UAuthForm los entrega tal cual al <input>.
+// No uses `required: true` en su lugar: solo pinta el asterisco del UFormField.
+const required = { 'aria-required': true } as const
+const emailAttrs = { ...required, spellcheck: false, autocapitalize: 'off' } as const
+
 const fields: AuthFormField[] = [
   {
     name: 'email',
     type: 'email',
     label: 'Correo institucional',
     autocomplete: 'username',
-    'aria-required': true,
-    spellcheck: false,
-    autocapitalize: 'off',
     // En una página que solo sirve para entrar, el autofoco es aceptable.
     autofocus: true,
     size: 'lg',
+    ...emailAttrs,
   },
   {
     name: 'password',
     type: 'password',
     label: 'Contraseña',
     autocomplete: 'current-password',
-    'aria-required': true,
     size: 'lg',
+    ...required,
   },
 ]
 
